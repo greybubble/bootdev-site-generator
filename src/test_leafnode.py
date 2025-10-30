@@ -12,7 +12,7 @@ class TestLeafNode(unittest.TestCase):
         self.assertEqual(node.to_html(), '<a href="https://www.google.com">This is some anchor text</a>')
 
     def test_leaf_no_value(self):
-        node = LeafNode("a", "", {"href":"https://www.google.com",})
+        node = LeafNode("a", None, {"href":"https://www.google.com",})
         with self.assertRaises(ValueError):
             node.to_html()
 
