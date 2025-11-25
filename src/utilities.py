@@ -2,6 +2,7 @@ from textnode import TextNode, TextType
 from leafnode import LeafNode
 from parentnode import ParentNode
 from enum import Enum
+import re
 
 
 def text_node_to_html_node(text_node):
@@ -14,3 +15,80 @@ def text_node_to_html_node(text_node):
             return LeafNode(text_node.text_type.value, text_node.text)
         
     raise ValueError(f"Error: Invalid text type {text_node.text_type}")
+
+def split_nodes_delimiter(old_nodes, delimiter, text_type):
+    if not old_nodes:
+        return []
+    
+    new_nodes = []
+
+    for node in old_nodes:
+        node_text = node.text.split(delimiter)
+
+        if len(node_text)%2 == 0:
+            raise Exception("Error: opening and closing delimiters don't match")
+        
+        for i in range(len(node_text)):
+            if(i%2 == 0):
+                new_nodes.append(TextNode(node_text[i], node.text_type))
+            else:
+                new_nodes.append(TextNode(node_text[i], text_type))
+
+    return new_nodes
+
+def extract_markdown_images(text):
+    matches = re.findall(r"(?<=!\[)([\w\s\.]+)(?:\]\()([\w:/.]+)", text)
+    return matches
+
+def extract_markdown_links(text):
+    matches = re.findall(r"(?<!!\[)(?<=\[)([\w\s\.]+)(?:\]\()([\w:/.]+)", text)
+    return matches
+
+def split_nodes_image(old_nodes):
+    if not old_nodes:
+        return []
+    
+    new_nodes = []
+
+    for node in old_nodes:
+        images = extract_markdown_images(node.text)
+        split_node = []
+        current_text = node.text
+        for i in range(0, len(images)):
+            cut = current_text.split("![", 1)
+            split_node.append(TextNode(cut[0],TextType.TEXT))
+            split_node.append(TextNode(images[i][0], TextType.IMAGE, images[i][1]))
+            cut = cut[1].split(")", 1)
+            current_text = cut[1]
+        split_node.append(TextNode(current_text,TextType.TEXT))
+        new_nodes.extend(split_node)
+    
+    return new_nodes
+
+
+def split_nodes_link(old_nodes):
+    if not old_nodes:
+        return []
+    
+    new_nodes = []
+
+    for node in old_nodes:
+        links = extract_markdown_links(node.text)
+        split_node = []
+        current_text = node.text
+        for i in range(0, len(links)):
+            cut = current_text.split("[", 1)
+            while cut[0][-1] == '!':
+                temp = cut[0]
+                cut = cut[1].split("[", 1)
+                cut[0] = temp + '[' + cut[0]
+                print(cut)
+            split_node.append(TextNode(cut[0],TextType.TEXT))
+            split_node.append(TextNode(links[i][0], TextType.LINK, links[i][1]))
+            cut = cut[1].split(")", 1)
+            current_text = cut[1]
+        split_node.append(TextNode(current_text,TextType.TEXT))
+        new_nodes.extend(split_node)
+    
+    return new_nodes
+    
