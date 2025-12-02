@@ -3,6 +3,7 @@ from leafnode import LeafNode
 from parentnode import ParentNode
 from enum import Enum
 import re
+from blocktype import BlockType
 
 
 def text_node_to_html_node(text_node):
@@ -52,6 +53,9 @@ def split_nodes_image(old_nodes):
 
     for node in old_nodes:
         images = extract_markdown_images(node.text)
+        if not images:
+            new_nodes.append(node)
+            continue
         split_node = []
         current_text = node.text
         for i in range(0, len(images)):
@@ -74,6 +78,9 @@ def split_nodes_link(old_nodes):
 
     for node in old_nodes:
         links = extract_markdown_links(node.text)
+        if not links:
+            new_nodes.append(node)
+            continue
         split_node = []
         current_text = node.text
         for i in range(0, len(links)):
@@ -87,8 +94,69 @@ def split_nodes_link(old_nodes):
             split_node.append(TextNode(links[i][0], TextType.LINK, links[i][1]))
             cut = cut[1].split(")", 1)
             current_text = cut[1]
-        split_node.append(TextNode(current_text,TextType.TEXT))
+        if current_text:
+            split_node.append(TextNode(current_text,TextType.TEXT))
         new_nodes.extend(split_node)
     
     return new_nodes
+
+def text_to_textnodes(text):
     
+    new_nodes = split_nodes_delimiter([TextNode(text, TextType.TEXT)], "_", TextType.ITALIC)
+    new_nodes = split_nodes_delimiter(new_nodes, "**", TextType.BOLD)
+    new_nodes = split_nodes_delimiter(new_nodes, "`",TextType.CODE)
+    new_nodes = split_nodes_image(new_nodes)
+    new_nodes = split_nodes_link(new_nodes)
+
+    return new_nodes    
+
+def markdown_to_blocks(markdown):
+    blocks = markdown.split("\n\n") 
+    stripped_blocks = []
+    for block in blocks:
+        stripped = block.strip("\n ")
+        if stripped:
+            stripped_blocks.append(stripped)
+    return stripped_blocks
+
+def block_to_block_type(block):
+
+    if re.match(r'#{1,6}\s', block):
+        return BlockType.HEADING
+    
+    if block[0:3] == "```" and block[-3:] == "```":
+        return BlockType.CODE
+    
+    if block[0] == ">":
+        valid_quote = True
+        lines = block.split('\n')
+        for line in lines:
+            if line[0] != '>':
+                valid_quote = False
+        
+        if valid_quote:
+            return BlockType.QUOTE
+        
+    if block[0:2] == "- ":
+        valid_list = True
+        lines = block.split('\n')
+        for line in lines:
+            if line[0:2] != '- ':
+                valid_list = False
+        if valid_list:
+            return BlockType.UNORDERED_LIST
+    
+    if block[0:3] == "1. ":
+        valid_list = True
+        lines = block.split('\n')
+        for i in range(1,len(lines)):
+            start = lines[i].split(" ", 1)[0]
+            if start != (str(i+1)+'.'):
+                valid_list = False
+        if valid_list:
+            return BlockType.ORDERED_LIST
+    
+    return BlockType.PARAGRAPH
+
+
+

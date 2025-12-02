@@ -93,3 +93,83 @@ class TestUtilities(unittest.TestCase):
         # print("-----------split nodes link------------")
         # for node in new_node_list:
         #     print(node)
+
+
+    def test_text_to_textnodes(self):
+        text = "This is **text** with an _italic_ word and a `code block` and an ![obi wan image](https://i.imgur.com/fJRm4Vk.jpeg) and a [link](https://boot.dev)"
+
+        expected_result = [
+            TextNode("This is ", TextType.TEXT),
+            TextNode("text", TextType.BOLD),
+            TextNode(" with an ", TextType.TEXT),
+            TextNode("italic", TextType.ITALIC),
+            TextNode(" word and a ", TextType.TEXT),
+            TextNode("code block", TextType.CODE),
+            TextNode(" and an ", TextType.TEXT),
+            TextNode("obi wan image", TextType.IMAGE, "https://i.imgur.com/fJRm4Vk.jpeg"),
+            TextNode(" and a ", TextType.TEXT),
+            TextNode("link", TextType.LINK, "https://boot.dev"),
+        ]
+
+        result = text_to_textnodes(text)
+        self.assertEqual(expected_result, result, "Result did not match expected")
+        # print()
+        # print("test_text_to_textnodes")
+        # for node in result:
+        #     print(node)
+        
+    def test_markdown_to_blocks(self):
+        md = """
+This is **bolded** paragraph
+
+This is another paragraph with _italic_ text and `code` here
+This is the same paragraph on a new line
+
+- This is a list
+- with items
+"""
+        blocks = markdown_to_blocks(md)
+        self.assertEqual(
+            blocks,
+            [
+                "This is **bolded** paragraph",
+                "This is another paragraph with _italic_ text and `code` here\nThis is the same paragraph on a new line",
+                "- This is a list\n- with items",
+            ],
+        )
+
+    def test_block_to_block_type(self):
+        md = """
+This is **bolded** paragraph
+
+This is another paragraph with _italic_ text and `code` here
+This is the same paragraph on a new line
+
+- This is a list
+- with items
+- and its unordered
+
+1. This is an ordered list
+2. With some items
+3. And such
+
+```This is a code block```
+
+# big heading
+
+###### still a heading
+
+########## paragraph, not a heading?
+
+> This is a quote
+> on multiple lines
+
+"""
+        blocks = markdown_to_blocks(md)
+
+        for block in blocks:
+            
+            type = block_to_block_type(block)
+            print("-----------")
+            print(block)
+            print(type)
