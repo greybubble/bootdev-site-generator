@@ -38,11 +38,11 @@ def split_nodes_delimiter(old_nodes, delimiter, text_type):
     return new_nodes
 
 def extract_markdown_images(text):
-    matches = re.findall(r"(?<=!\[)([\w\s\.]+)(?:\]\()([\w:/.]+)", text)
+    matches = re.findall(r"(?<=!\[)([\w\s\.\"\']+)(?:\]\()([\w:/.-]+)", text)
     return matches
 
 def extract_markdown_links(text):
-    matches = re.findall(r"(?<!!\[)(?<=\[)([\w\s\.]+)(?:\]\()([\w:/.]+)", text)
+    matches = re.findall(r"(?<!!\[)(?<=\[)([\w\s\.\"\']+)(?:\]\()([\w:/.-]+)", text)
     return matches
 
 def split_nodes_image(old_nodes):
@@ -84,15 +84,13 @@ def split_nodes_link(old_nodes):
         split_node = []
         current_text = node.text
         for i in range(0, len(links)):
-            cut = current_text.split("[", 1)
-            while cut[0] and cut[0][-1] == '!':
-                temp = cut[0]
-                cut = cut[1].split("[", 1)
-                cut[0] = temp + '[' + cut[0]
-                
-            split_node.append(TextNode(cut[0],TextType.TEXT))
+            cut = current_text.split(f"[{links[i][0]}]({links[i][1]})", 1)
+            if cut[0]:
+                split_node.append(TextNode(cut[0],TextType.TEXT))
             split_node.append(TextNode(links[i][0], TextType.LINK, links[i][1]))
-            cut = cut[1].split(")", 1)
+            print("\n\nTesting split nodes link")
+            print(links)
+            print(cut)
             current_text = cut[1]
         if current_text:
             split_node.append(TextNode(current_text,TextType.TEXT))
@@ -163,6 +161,8 @@ def ul_block_to_html_node(block):
     bullets = block.split("\n")
 
     for bullet in bullets:
+        print("\n\n Testing ul block to html node")
+        print(bullet[2:])
         text_nodes = text_to_textnodes(bullet[2:])
         h_nodes = []
         for node in text_nodes:
