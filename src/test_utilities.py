@@ -26,14 +26,14 @@ class TestUtilities(unittest.TestCase):
     def test_extract_markdown_images(self):
         mdtext = "This is text with a ![rick roll](https://i.imgur.com/aKaOqIh.gif) and ![obi wan](https://i.imgur.com/fJRm4Vk.jpeg)"
         imagetext = extract_markdown_images(mdtext)
-        print("testing markdown extraction of images")
-        print(imagetext)
+        # print("testing markdown extraction of images")
+        # print(imagetext)
 
     def test_extract_markdown_links(self):
         mdtext = "This is text with a [rick roll link](https://i.imgur.com/aKaOqIh.gif) and ![obi wan image](https://i.imgur.com/fJRm4Vk.jpeg)"
         imagetext = extract_markdown_links(mdtext)
-        print("testing markdown extraction of images")
-        print(imagetext)
+        # print("testing markdown extraction of images")
+        # print(imagetext)
 
     def test_split_node_image(self):
         node1 = TextNode("This is text with a [link1](https://i.imgur.com/aKaOqIh.gif) and ![image1](https://i.imgur.com/fJRm4Vk.jpeg) and [another link](https://anotherlink.com) as well!", TextType.TEXT)
@@ -164,12 +164,74 @@ This is the same paragraph on a new line
 > This is a quote
 > on multiple lines
 
+1. This will be
+A paragraph
+3. and not an ordered list
+
+-this will also be a paragraph
+-because there isn't the expected space after the dash
+
+
 """
+
         blocks = markdown_to_blocks(md)
 
+        expected_result = [
+            BlockType.PARAGRAPH,
+            BlockType.PARAGRAPH,
+            BlockType.UNORDERED_LIST,
+            BlockType.ORDERED_LIST,
+            BlockType.CODE,
+            BlockType.HEADING,
+            BlockType.HEADING,
+            BlockType.PARAGRAPH,
+            BlockType.QUOTE,
+            BlockType.PARAGRAPH,
+            BlockType.PARAGRAPH
+        ]
+
+        results = []
         for block in blocks:
             
             type = block_to_block_type(block)
-            print("-----------")
-            print(block)
-            print(type)
+            results.append(type)
+        
+        self.assertEqual(expected_result, results, "Results do not match expected")
+
+    def test_paragraphs(self):
+        md = """
+This is **bolded** paragraph
+text in a p
+tag here
+
+This is another paragraph with _italic_ text and `code` here
+
+"""
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        print()
+        print("----paragraph----")
+        print(html)
+        self.assertEqual(
+            html,
+            "<div><p>This is <b>bolded</b> paragraph text in a p tag here</p><p>This is another paragraph with <i>italic</i> text and <code>code</code> here</p></div>",
+        )
+
+    def test_codeblock(self):
+        md = """
+```
+This is text that _should_ remain
+the **same** even with inline stuff
+```
+"""
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        print()
+        print("----codeblock----")
+        print(html)
+        print("----expected----")
+        print("<div><pre><code>This is text that _should_ remain\nthe **same** even with inline stuff\n</code></pre></div>")
+        self.assertEqual(
+            html,
+            "<div><pre><code>This is text that _should_ remain\nthe **same** even with inline stuff\n</code></pre></div>",
+        )

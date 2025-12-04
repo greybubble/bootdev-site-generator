@@ -89,7 +89,7 @@ def split_nodes_link(old_nodes):
                 temp = cut[0]
                 cut = cut[1].split("[", 1)
                 cut[0] = temp + '[' + cut[0]
-                print(cut)
+                
             split_node.append(TextNode(cut[0],TextType.TEXT))
             split_node.append(TextNode(links[i][0], TextType.LINK, links[i][1]))
             cut = cut[1].split(")", 1)
@@ -157,6 +157,100 @@ def block_to_block_type(block):
             return BlockType.ORDERED_LIST
     
     return BlockType.PARAGRAPH
+
+def ul_block_to_html_node(block):
+    l_children = []
+    bullets = block.split("\n")
+
+    for bullet in bullets:
+        text_nodes = text_to_textnodes(bullet[2:])
+        h_nodes = []
+        for node in text_nodes:
+            h_nodes.append(text_node_to_html_node(node))
+        bullet_node = ParentNode("li", h_nodes)
+        l_children.append(bullet_node)
+
+    return ParentNode("ul", l_children)
+
+def ol_block_to_html_node(block):
+    l_children = []
+    bullets = block.split("\n")
+
+    for bullet in bullets:
+        text_nodes = text_to_textnodes(bullet.split(" ", 1)[1])
+        h_nodes = []
+        for node in text_nodes:
+            h_nodes.append(text_node_to_html_node(node))
+        bullet_node = ParentNode("li", h_nodes)
+        l_children.append(bullet_node)
+
+    return ParentNode("ol", l_children)
+
+def quote_block_to_html_node(block):
+    lines = block.split("\n")
+    quote = []
+    for line in lines:
+        quote.append(line[2:])
+    quote = ' '.join(quote)
+
+    quote_tnodes = text_to_textnodes(quote)
+    quote_hnodes = []
+    for node in quote_tnodes:
+        quote_hnodes.append(text_node_to_html_node(node))
+
+    return ParentNode("blockquote", quote_hnodes)
+
+def p_block_to_html_node(block):
+    p_tnodes = text_to_textnodes(block.replace('\n', ' '))
+    p_hnodes = []
+    for node in p_tnodes:
+        p_hnodes.append(text_node_to_html_node(node))
+    
+    return ParentNode("p", p_hnodes)
+
+def code_block_to_html_node(block):
+    text = block.strip('`').lstrip('\n')
+    node = TextNode(text, TextType.CODE)
+    hnode = text_node_to_html_node(node)
+
+    return ParentNode("pre", [hnode])
+
+def heading_block_to_html_node(block):
+    heading = block.split(' ', 1)
+    size = len(heading[0])
+    tag = 'h' + str(size)
+    h_tnodes = text_to_textnodes(heading[1])
+    h_hnodes = []
+    for node in h_tnodes:
+        h_hnodes.append(text_node_to_html_node(node))
+    
+    return ParentNode(tag, h_hnodes)
+
+def block_to_html_node(block):
+    btype = block_to_block_type(block)
+
+    match btype:
+        case BlockType.CODE:
+            return code_block_to_html_node(block)
+        case BlockType.UNORDERED_LIST:
+            return ul_block_to_html_node(block)
+        case BlockType.ORDERED_LIST:
+            return ol_block_to_html_node(block)
+        case BlockType.PARAGRAPH:
+            return p_block_to_html_node(block)
+        case BlockType.QUOTE:
+            return quote_block_to_html_node(block)
+        case BlockType.HEADING:
+            return heading_block_to_html_node(block)
+    
+def markdown_to_html_node(markdown):
+    blocks = markdown_to_blocks(markdown)
+    html_nodes = []
+
+    for block in blocks:
+        html_nodes.append(block_to_html_node(block))
+
+    return ParentNode("div", html_nodes)
 
 
 

@@ -12,9 +12,9 @@ class ParentNode(HTMLNode):
             raise ValueError("Error: Parent Node doesn't have any children!")
         
         output = ""
-        print(self)
+        # print(self)
         for child in self.children:
-            print(child)
+            # print(child)
             output += child.to_html()
 
         return f'<{self.tag}{self.props_to_html()}>{output}</{self.tag}>'
