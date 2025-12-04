@@ -85,7 +85,7 @@ def split_nodes_link(old_nodes):
         current_text = node.text
         for i in range(0, len(links)):
             cut = current_text.split("[", 1)
-            while cut[0][-1] == '!':
+            while cut[0] and cut[0][-1] == '!':
                 temp = cut[0]
                 cut = cut[1].split("[", 1)
                 cut[0] = temp + '[' + cut[0]
@@ -251,6 +251,18 @@ def markdown_to_html_node(markdown):
         html_nodes.append(block_to_html_node(block))
 
     return ParentNode("div", html_nodes)
+
+def extract_title(markdown):
+    blocks = markdown_to_blocks(markdown)
+
+    for block in blocks:
+        if block_to_block_type(block) == BlockType.HEADING and block[0:2] == "# ":
+            return block[2:]
+    
+    raise Exception("Error: No h1 heading included in the provided markdown text")
+
+
+
 
 
 
