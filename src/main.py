@@ -8,7 +8,7 @@ import shutil
 
 def main():
     copy_static_to_public()
-    generate_page("content/index.md", "template.html", "public/index.html")
+    generate_pages_recursive("content", "template.html", "public")
 
 
 
@@ -89,6 +89,34 @@ def generate_page(from_path, template_path, dest_path):
     with open(dest_path, "w") as f:
         f.write(page)
     
+def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
+    print(f"Generating pages from directory {dir_path_content} to {dest_dir_path} using {template_path}")
+    if not os.path.isdir(dir_path_content):
+        raise Exception(f"Error: Content folder not found at {dir_path_content}")
+    
+    if not os.path.isfile(template_path):
+        raise Exception(f"Error: Template not found at {template_path}")
+    
+    if not os.path.isdir(dest_dir_path):
+        os.mkdir(dest_dir_path)
+
+    contents = os.listdir(dir_path_content)
+
+    if not contents:
+        print(f"Caution: Content folder is empty at {dir_path_content}")
+
+    for item in contents:
+        c_path = f"{dir_path_content}/{item}"
+        d_path = f"{dest_dir_path}/{item}"
+
+        if os.path.isdir(c_path):
+            generate_pages_recursive(c_path, template_path, d_path)
+        elif item.endswith('.md'):
+            generate_page(c_path, template_path, d_path.replace('.md', '.html'))
+        else:
+            shutil.copy(c_path, d_path)
+    
+
 
 
 
