@@ -5,10 +5,18 @@ from enum import Enum
 from utilities import *
 import os
 import shutil
+import sys
 
 def main():
-    copy_static_to_public()
-    generate_pages_recursive("content", "template.html", "public")
+    basepath = '/'
+    if len(sys.argv) > 1:
+        basepath = sys.argv[1]
+
+    copy_static_to_public("static", "docs")
+    c_dir = "content"
+    t_path = "template.html"
+    d_dir = "docs"
+    generate_pages_recursive(c_dir, t_path, d_dir, basepath)
 
 
 
@@ -57,16 +65,15 @@ def copy_folder_to_dest(o_path, d_path):
         else:
             raise Exception(f"Error: not sure what {item_path} is, but it ain't a file or folder!") 
 
-def copy_static_to_public():
-    source = 'static'
-    dest = 'public'
+def copy_static_to_public(source, dest):
+    
     print(f"Copying files from {source} to {dest}")
     if os.path.exists(dest):
         rm_folder(dest)
 
     copy_folder_to_dest(source, dest)
     
-def generate_page(from_path, template_path, dest_path):
+def generate_page(from_path, template_path, dest_path, basepath):
     print(f"Generating page from {from_path} to {dest_path} using {template_path}")
     if not os.path.exists(from_path):
         raise Exception("Error: web page source file is missing or path is incorrect")
@@ -85,11 +92,14 @@ def generate_page(from_path, template_path, dest_path):
     title = extract_title(markdown) 
     h_node = markdown_to_html_node(markdown)
     page = template.replace("{{ Title }}", title).replace("{{ Content }}", h_node.to_html())
-    
+    page = page.replace('href="/', f'href="{basepath}')
+    page = page.replace('src="/', f'src="{basepath}')
     with open(dest_path, "w") as f:
         f.write(page)
     
-def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
+def generate_pages_recursive(dir_path_content, template_path, dest_dir_path, basepath):
+    
+
     print(f"Generating pages from directory {dir_path_content} to {dest_dir_path} using {template_path}")
     if not os.path.isdir(dir_path_content):
         raise Exception(f"Error: Content folder not found at {dir_path_content}")
@@ -110,9 +120,9 @@ def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
         d_path = f"{dest_dir_path}/{item}"
 
         if os.path.isdir(c_path):
-            generate_pages_recursive(c_path, template_path, d_path)
+            generate_pages_recursive(c_path, template_path, d_path, basepath)
         elif item.endswith('.md'):
-            generate_page(c_path, template_path, d_path.replace('.md', '.html'))
+            generate_page(c_path, template_path, d_path.replace('.md', '.html'), basepath)
         else:
             shutil.copy(c_path, d_path)
     
